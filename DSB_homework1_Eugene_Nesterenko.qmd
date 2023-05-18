@@ -204,8 +204,40 @@ We have tried to make a code more robust, saving the variable (list) for most fr
     -   What is the relationship between `precip` and `visib`?
 
 ```{r}
+head(weather)
 
+# Save a dataframe for July 2013 only)
+weather_july_2013 <- weather %>% 
+  filter(year == 2013 & month == 7)
+
+# Get summary statistics for July 2013, which allows to infer data about distribution and outliers for temperature and wind speed
+skim(weather_july_2013)
+
+# Further check the wind speed outliers. Hypothesis - wind speed of 0 is actually a missed data point
+weather_july_2013 %>% 
+  filter(wind_speed == 0) %>% 
+  summarize(count = n())
+
+# Draw a scatterplot to infer relationship between dew point and humidity
+ggplot(weather, aes(x = dewp, y = humid)) +
+  geom_point()
+
+# Draw a scatterplot to infer relationship between precipitation level and visibility
+ggplot(weather, aes(x = precip, y = visib)) +
+  geom_point()
+
+# Draw a scatterplot to infer relationship between precipitation level and visibility for July 2013 only
+ggplot(weather_july_2013, aes(x = precip, y = visib)) +
+  geom_point()
 ```
+
+**Temperature in July 2013 has a mean of 80 degrees Fahrenheit and a standard deviation of 7.1**. It also **seems to be skewed to the right**, with median (79 degrees) being less than mean, and 75% percentile and maximum value farther from median than 25% percentile and minimum value respectively.
+
+**Wind speed data seems to be incomplete in July 2013, with 2 missing points and as much as 79 points with wind speed of exactly 0** (unlikely result, looks more like lack of data than true case of 0 speed).
+
+The scatter plot for the (dewp, humid) looks quite cumbersome, but from the shape **we can infer a positive correlation - the higher the dew point, the higher the humidity.** We believe these are related concepts (but not so sure on the definitions), so the correlation is expected.
+
+The **precipitation-visibility** data shows no clear pattern on individual observations across years, and July 2013 data points to **slightly positive correlation**. This is **counterintuitive**, as we would expect rain and snow to reduce distance at which objects are visible.
 
 ## Problem 5: Use the `flights` and `planes` tables to answer the following questions:
 
