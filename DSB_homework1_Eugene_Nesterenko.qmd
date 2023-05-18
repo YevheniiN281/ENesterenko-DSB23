@@ -246,8 +246,95 @@ The **precipitation-visibility** data shows no clear pattern on individual obser
     -   Has the distribution of manufacturer changed over time as reflected by the airplanes flying from NYC in 2013? (Hint: you may need to use case_when() to recode the manufacturer name and collapse rare vendors into a category called Other.)
 
 ```{r}
+head(planes)
 
+# Get a dataframe for which year of manufacture is unknown
+planes %>% 
+  filter(is.na(year))
+
+# Basic dataframe of manufacturers and number of planes
+planes_number <- planes %>% 
+  group_by(manufacturer) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+# Take a look at the result
+planes_number
+
+# Create a new dataset with manufactureres uniformly named. Not popular names are grouped into the "OTHER" category
+planes_renamed_manufacturers <- planes %>% 
+  mutate(
+   manufacturer = case_when(
+     manufacturer == "BOEING" ~ "BOEING",
+     manufacturer %in%  c("AIRBUS INDUSTRIE", "AIRBUS") ~ "AIRBUS",
+     manufacturer %in% c("MCDONNELL DOUGLAS","MCDONNELL DOUGLAS AIRCRAFT CO","MCDONNELL DOUGLAS CORPORATION") ~ "MCDONNELL DOUGLAS",
+     manufacturer == "BOMBARDIER INC" ~ "BOMBARDIER INC",
+     manufacturer == "EMBRAER" ~ "EMBRAER",
+     TRUE  ~ "OTHER"
+   ) 
+  )
+
+# Precise dataframe of manufacturers (using uniform naming) and number of planes
+planes_precise_number <- planes_renamed_manufacturers %>% 
+  group_by(manufacturer) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+# Take a look at the result
+planes_precise_number
+
+
+# Attempt to store distinct planes that flew in 2013 as a list
+distinct_flights <- flights %>% 
+  filter(year == 2013) %>%
+  distinct(tailnum) %>%
+  select(tailnum)
+
+# Attempt to recreate the analysis, adding the filter on unique planes that flew in 2013
+(
+planes_precise_number_2013 <- planes_renamed_manufacturers %>%
+  filter(tailnum %in% c(distinct_flights)) %>% 
+  group_by(manufacturer) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+)
 ```
+
+Table *planes* only contains information about year of manufacture. Applying the NA filter, we find that 70 planes have unknown year of manufacture.
+
+The list of five most common manufacturer is provided below. Boeing tops the list with 1630 planes
+
+| Manufacturer     | Number of planes |
+|------------------|------------------|
+| BOEING           | 1630             |
+| AIRBUS INDUSTRIE | 400              |
+| BOMBARDIER INC   | 368              |
+| AIRBUS           | 336              |
+| EMBRAER          | 299              |
+
+: Common manufacturers
+
+We need to be aware, however, that grouping by might not recognize same manufacturer under different names (e.g. "AIRBUS INDUSTRIE" is treated separate from "AIRBUS"). To take this into account, manufacturer names in the dataset must be amended to be uniform. The hint on "case_when" might also be useful.
+
+Indeed, applying the case_when and grouping all manufactures with less than 10 planes into the "OTHER" category, we get the top-5 manufacturers:
+
+| Manufacturer      | Number of planes |
+|-------------------|------------------|
+| BOEING            | 1630             |
+| AIRBUS            | 736              |
+| BOMBARDIER INC    | 368              |
+| EMBRAER           | 299              |
+| MCDONNELL DOUGLAS | 237              |
+
+Others total in 52 planes
+
+The general idea to understand changes in 2013 is the following:
+
+1.  Find and save a distinct list of unique planes that flew in 2013 (tailnum from flights table)
+2.  Use this list as an input to %in% filter for the planes_renamed_manufacturers table
+3.  Group the dataframe by manufacturer, summarize (count) and arrange in descending order
+
+However, tibble from point 1 (list of unique planes) does not serve as a filter input well, and we don't know how to actually save variable as a list (vector)
 
 ## Problem 6: Use the `flights` and `planes` tables to answer the following questions:
 
