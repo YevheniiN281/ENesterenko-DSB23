@@ -383,27 +383,20 @@ N381AA is the oldest plane (manufactured in 1956) that flew from NYC in 2013. Te
     -   For each airline, plot the median arrival delay for each month and origin airport.
 
 ```{r}
+# Way 1 - save a dataframe grouped by origin and month
 flights_by_month <- flights %>% 
-  group_by(origin, year, month)
+  group_by(origin, month)
 
-flights
-
-flights_by_month
-
+# Way 1 - save the dataframe with summarized valued for median
 flights_median <- flights_by_month %>% 
   summarize(median_arr_delay = median(arr_delay))
 
-flights_median_3 <- flights %>% 
-  group_by(month, origin) %>% 
-  summarize(median_arr_delay = median(arr_delay))
-
-flights_median_3
-
+# Way 1 - try to build faceted scatterplot
 ggplot(flights_median, aes(x = month, y = median_arr_delay)) +
 geom_point() +
 facet_wrap(~ origin)
 
-
+# Way 2 - do the grouping, summarizing and building a graph in one piece of code
 flights %>% 
   group_by(origin, month) %>% 
   summarize(median_arr_delay = median(arr_delay)) %>% 
@@ -418,22 +411,28 @@ For some reason, R does not calculate the median for arr_delay variable in summa
 ## Problem 8: Let's take a closer look at what carriers service the route to San Francisco International (SFO). Join the `flights` and `airlines` tables and count which airlines flew the most to SFO. Produce a new dataframe, `fly_into_sfo` that contains three variables: the `name` of the airline, e.g., `United Air Lines Inc.` not `UA`, the count (number) of times it flew to SFO, and the `percent` of the trips that that particular airline flew to SFO.
 
 ```{r}
+# Join the two tables to enrich flights data with airlines data
+# We want to preserve flights data, hence left join
 flights_enriched <- left_join(x = flights, y = airlines, by = "carrier")
 
+# Take a look at data
 flights_enriched
 
+# Interim table to count flights to SFO only by airline
 fly_into_sfo_only <- flights_enriched %>% 
   filter(dest == "SFO") %>%
   group_by(name) %>% 
   summarize(flights_to_sfo = n()) 
 
-  
+# Interim table to count total flights by airline
 fly_total <- flights_enriched %>% 
   group_by(name) %>% 
   summarize(flights_total = n())
 
+# Join two interim tables to have total flights and flights to SFO in one dataframe
 fly_into_sfo <- left_join(y = fly_total, x = fly_into_sfo_only, by = "name")
 
+# Create a percent variable as ratio of flights to SFO to total flights, arrange from highest to lowest number of flights
 fly_into_sfo %>% 
   mutate(percent = round((flights_to_sfo/flights_total)*100,1)) %>% 
   arrange(desc(flights_to_sfo))
