@@ -43,25 +43,32 @@ flights %>%
 
 # Flew to Houston (IAH or HOU)
 flights %>% 
-  filter(dest == "IAH" | dest == "HOU")
+  # filter for multiple destinations using OR operator
+  filter(dest == "IAH" | dest == "HOU") 
 
 # Were operated by United (`UA`), American (`AA`), or Delta (`DL`)
 flights %>% 
+  # filter for multiple carriers using a vector (list) of possible values
   filter(carrier %in% c("UA","AA","DL"))
 
 # Departed in summer (July, August, and September)
-flights %>% 
+flights %>%
+  # filter for multiple months using a vector of possible numerical month values
   filter(month %in% c(7,8,9))
   
 # Arrived more than two hours late, but didn't leave late
 flights %>% 
+  # filter with criteria for departure and arrival delay using AND operator
   filter(dep_delay <= 0 & arr_delay > 120)
 
 # Were delayed by at least an hour, but made up over 30 minutes in flight
-flights %>% 
+flights %>%
+  # filter with criteria for departure and make up time using sequential filters
   filter(dep_delay >= 60) %>% 
   filter((dep_delay - arr_delay) > 30)
 ```
+
+We have found an unusual result for the *Arrived more than two hours late, but didn't leave late* filter. It must be the case of currupted data - we can hardly imagine flights that spent more than additional 1000 minutes in the air (arrival time delay was over 1000 minutes with non-positive departure delay)
 
 ## Problem 2: What months had the highest and lowest proportion of cancelled flights? Interpret any seasonal patterns. To determine if a flight was cancelled use the following code
 
@@ -74,30 +81,50 @@ flights %>%
 #| label: problem-2
 
 # What months had the highest and lowest % of cancelled flights?
+
+# First, we create two dataframes - cancelled flights and total flights - with summary statistics
+
+# Cancelled flights dataframe
 cancelled_flights <- flights %>%
-  filter(is.na(dep_time)) %>% 
-  group_by(month) %>% 
-  summarise(number_cancelled = n()) %>%
-  arrange(desc(number_cancelled))
+  
+  # filter for NA values
+  filter(is.na(dep_time)) %>%   
+  
+  # grouping dataset by months to calculate summary statistics
+  group_by(month) %>%
+  
+  # dataframe is already for the cancelled flights, we just count the number of cases by month
+  summarise(number_cancelled = n())   
 
-cancelled_flights
-
+# Total flights dataframe
 total_flights <- flights %>%
+  
+  # no need to filter for the cancelled flights
+  
+  # grouping dataset by months to calculate summary statistics
   group_by(month) %>% 
-  summarise(number_total = n()) %>%
-  arrange(desc(number_total))
+  
+  # dataframe is already for the total flights, we just count the total number of fligths by month
+  summarise(number_total = n())   
 
-total_flights
+# Joining two dataframes to have counts of cancelled and total flights in one table
+# We expect each month to have non-NA value of cancelled and total flights - hence, use inner join
+cancelled_percentage_flights <- inner_join(x = cancelled_flights, y = total_flights, by = "month")
 
-joined_table <- inner_join(x = cancelled_flights, y = total_flights, by = "month")
-
-joined_table
-
-joined_table %>% 
-  mutate(percentage_cancelled = round((number_cancelled/number_total) * 100, digits = 1)) %>% 
+# Adding new variable - percentage of cancelled flights, and arranging to find highest and lowest cases
+cancelled_percentage_flights %>% 
+  
+  # Add a new variable for the percentage as (N of cancelled / N of total)*100, up to 1 digit precision
+  mutate(percentage_cancelled = round((number_cancelled/number_total) * 100, digits = 1)) %>%
+  
+  # Arranging in descending order on percentage of cancelled flights
   arrange(desc(percentage_cancelled))
 
 ```
+
+February has **the highest** proportion of cancelled flights (5.1%), while October has **the lowest** (0.8%). **Our hypothesis is that in February weather conditions in NYC often do not permit the plane to take off** (cold weather, ice on the runway, blizzard). Same factors could contribute to higher average delay time (though this hypothesis needs to be verified).
+
+**For October-November** (percentage is similar), **perhaps, weather conditions are most favourable.** We also see the **seasonal factor only for autumn months (September - November), which indicates low percentage of cancelled flights**. Other seasons do not show a clear pattern.
 
 ## Problem 3: What plane (specified by the `tailnum` variable) traveled the most times from New York City airports in 2013? Please `left_join()` the resulting table with the table `planes` (also included in the `nycflights13` package).
 
