@@ -131,11 +131,71 @@ February has **the highest** proportion of cancelled flights (5.1%), while Octob
 For the plane with the greatest number of flights and that had more than 50 seats, please create a table where it flew to during 2013.
 
 ```{r}
-fligths %>% 
-  filter(year == 2013) %>% 
-  arrange()
+#| label: problem-3
 
+# Saving and printing a new table for number of flights by plane (tailnum)
+(
+flights_by_plane <- flights %>%  # use base dataset flights as a starting point
+  
+  # Selecting only year 2013
+  filter(year == 2013) %>%
+  
+  # Deleting rows with unknown tail number (otherwise distorts statistics)
+  drop_na(tailnum) %>%
+    
+  # Creating a dataframe grouped by plane
+  group_by(tailnum) %>%
+  
+  # Counting number of flights by plane
+  summarize(count_flights = n()) %>% 
+  
+  # Arranging in descending order to find the plane that travelled the most
+  arrange(desc(count_flights))
+)
+
+# Joining the data on flight count with planes details. We want to preserve data on number of flights regardless of whether the tailnumber is registered in "planes" dictionary - hence, use the left join.
+plane_data_number_flights <- left_join(x = flights_by_plane, y = planes, by = "tailnum")
+
+# Print head rows of new table to take a look at data
+head(plane_data_number_flights)
+
+# We want to include only planes with more than 50 seats
+# For this, we would save a new table
+plane_data_number_flights_many_seats <- plane_data_number_flights %>%
+  
+  # Drop cases where number of seats is unknown (probably a redundant action, given the next filter)
+  drop_na(seats) %>%
+  # Leave only planes with over 50 seats
+  filter(seats > 50)
+
+  # dataframe was already arrange from most frequent to least frequent flyers, no need to arrange further
+
+# Find the plane with hightest number of flights that has over 50 seats
+head(plane_data_number_flights_many_seats,1)
+
+# Save the most frequent flyer (tailnum) to a separate list (we don't know how to save to a single variable)
+frequent_flyer <- plane_data_number_flights_many_seats[1:1,1:1]
+
+# Save and print a table containing destinanations of the most frequent flyer
+(
+frequent_flyer_destinations <- flights %>% 
+  
+  # Selecting only the most frequently flying plane using a newly created list
+  filter(tailnum %in% frequent_flyer) %>%
+    
+  # Selecting only year 2013
+  filter(year == 2013) %>%
+    
+  # Showing only columns for plane (tail number) and destination
+  select(c("tailnum","dest"))
+)
 ```
+
+The unconditioned arrangement shows that plane **N725MQ** has the highest number of flights, 575.
+
+However, if we apply the filter on number of seats (*more than 50*), the result changes: now **N328AA** tops the list with 393 flights. The data frame **frequent_flyer_destinations** shows the destinations to which plane with tail number N328AA flew in 2013 - as expected, it has 393 rows.
+
+We have tried to make a code more robust, saving the variable (list) for most frequent flyer and later applying as an input for flights filter. If the dataset changes, so might change the tail number of most frequent flyer - the code supports such case.
 
 ## Problem 4: The `nycflights13` package includes a table (`weather`) that describes the weather during 2013. Use that table to answer the following questions:
 
@@ -267,7 +327,7 @@ The age gaps dataset includes "gender" columns, which always contain the values 
 The following is a data dictionary of the variables used
 
 | variable            | class     | description                                                                                             |
-|:--------------------|:----------|:--------------------------------------------------------------------------------------------------------|
+|:-----------------|:-----------------|:------------------------------------|
 | movie_name          | character | Name of the film                                                                                        |
 | release_year        | integer   | Release year                                                                                            |
 | director            | character | Director of the film                                                                                    |
