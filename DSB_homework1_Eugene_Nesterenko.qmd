@@ -449,50 +449,50 @@ Unfortunately, the code produces an error
 #| message: false
 #| warning: false
 
-fly_into_sfo %>% 
+#fly_into_sfo %>% 
   
   # sort 'name' of airline by the numbers it times to flew to SFO
-  mutate(name = fct_reorder(name, count)) %>% 
+#  mutate(name = fct_reorder(name, count)) %>% 
   
-  ggplot() +
+ # ggplot() +
   
-  aes(x = count, 
-      y = name) +
+#  aes(x = count, 
+ #     y = name) +
   
   # a simple bar/column plot
-  geom_col() +
+#  geom_col() +
   
   # add labels, so each bar shows the % of total flights 
-  geom_text(aes(label = percent),
-             hjust = 1, 
-             colour = "white", 
-             size = 5)+
+#  geom_text(aes(label = percent),
+ #            hjust = 1, 
+  #           colour = "white", 
+   #          size = 5)+
   
   # add labels to help our audience  
-  labs(title="Which airline dominates the NYC to SFO route?", 
-       subtitle = "as % of total flights in 2013",
-       x= "Number of flights",
-       y= NULL) +
+#  labs(title="Which airline dominates the NYC to SFO route?", 
+ #      subtitle = "as % of total flights in 2013",
+  #     x= "Number of flights",
+   #    y= NULL) +
   
-  theme_minimal() + 
+#  theme_minimal() + 
   
   # change the theme-- i just googled those , but you can use the ggThemeAssist add-in
   # https://cran.r-project.org/web/packages/ggThemeAssist/index.html
   
-  theme(#
+ # theme(#
     # so title is left-aligned
-    plot.title.position = "plot",
+  #  plot.title.position = "plot",
     
     # text in axes appears larger        
-    axis.text = element_text(size=12),
+   # axis.text = element_text(size=12),
     
     # title text is bigger
-    plot.title = element_text(size=18)
-      ) +
+#    plot.title = element_text(size=18)
+ #     ) +
 
   # add one final layer of NULL, so if you comment out any lines
   # you never end up with a hanging `+` that awaits another ggplot layer
-  NULL
+#  NULL
  
  
 ```
@@ -538,7 +538,7 @@ The age gaps dataset includes "gender" columns, which always contain the values 
 The following is a data dictionary of the variables used
 
 | variable            | class     | description                                                                                             |
-|:-----------------|:-----------------|:------------------------------------|
+|:--------------------|:----------|:--------------------------------------------------------------------------------------------------------|
 | movie_name          | character | Name of the film                                                                                        |
 | release_year        | integer   | Release year                                                                                            |
 | director            | character | Director of the film                                                                                    |
