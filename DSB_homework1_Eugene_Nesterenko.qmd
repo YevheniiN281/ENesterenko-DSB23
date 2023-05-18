@@ -342,8 +342,40 @@ However, tibble from point 1 (list of unique planes) does not serve as a filter 
     -   How many airplanes that flew from New York City are included in the planes table?
 
 ```{r}
+# mutate planes table to have a uniquely named column for year of manufacture
+planes_1 <- planes %>% 
+  mutate(year_manufactured = year)
 
+# mutate planes table to have a uniquely named column for year of flight
+flights_1 <- flights %>% 
+  mutate(year_flight = year)
+
+# join the two tables to have a dataframe with both year of manufacture (to sort) and year of flight (to filter)
+# We want to preserve flight data, hence we use left join
+flights_planes <- left_join(x = flights_1, y = planes_1, by = "tailnum")
+
+# Filtering for planes with known year of manufacture that flew in 2013, arranging by year of manufacture
+fights_planes_2013 <- flights_planes %>% 
+  drop_na(year_manufactured) %>% 
+  filter(year_flight == 2013) %>% 
+  arrange(year_manufactured)
+
+# Printing the row for top 1 (the oldest plane)
+head(fights_planes_2013,1)
+
+# Creating a new dataframe that contains only those planes from planes table that are also listed in flights table
+flights_planes_semi_joined <- semi_join(x = planes, y = flights, by = "tailnum")
+
+# Count number of planes in <potentially> reduced data. Planes table already has distinct values for planes
+count(flights_planes_semi_joined)
+
+# Compare to number of planes in original (not reduced) data
+count(planes)
 ```
+
+N381AA is the oldest plane (manufactured in 1956) that flew from NYC in 2013. Technically, it might not be the only plane that was manufactured in 2013 (ordering does not indicate distinct values), but there is definitely no older plane.
+
+3322 is the number of planes that flew from NYC and are included in the planes table (we used semi_join to reduce the planes table). However, it is precisely the same number that the whole planes table has - meaning that planes table is made of planes that flew from NYC.
 
 ## Problem 7: Use the `nycflights13` to answer the following questions:
 
@@ -351,16 +383,67 @@ However, tibble from point 1 (list of unique planes) does not serve as a filter 
     -   For each airline, plot the median arrival delay for each month and origin airport.
 
 ```{r}
+flights_by_month <- flights %>% 
+  group_by(origin, year, month)
 
+flights
+
+flights_by_month
+
+flights_median <- flights_by_month %>% 
+  summarize(median_arr_delay = median(arr_delay))
+
+flights_median_3 <- flights %>% 
+  group_by(month, origin) %>% 
+  summarize(median_arr_delay = median(arr_delay))
+
+flights_median_3
+
+ggplot(flights_median, aes(x = month, y = median_arr_delay)) +
+geom_point() +
+facet_wrap(~ origin)
+
+
+flights %>% 
+  group_by(origin, month) %>% 
+  summarize(median_arr_delay = median(arr_delay)) %>% 
+  ggplot() +
+  aes(x = month, y = median_arr_delay) +
+  geom_point() +
+  facet_wrap(~ origin)
 ```
+
+For some reason, R does not calculate the median for arr_delay variable in summarize section. I have used multiple ways to get to the result, but the problem seems to be narrowed down to non-calculating median value.
 
 ## Problem 8: Let's take a closer look at what carriers service the route to San Francisco International (SFO). Join the `flights` and `airlines` tables and count which airlines flew the most to SFO. Produce a new dataframe, `fly_into_sfo` that contains three variables: the `name` of the airline, e.g., `United Air Lines Inc.` not `UA`, the count (number) of times it flew to SFO, and the `percent` of the trips that that particular airline flew to SFO.
 
 ```{r}
+flights_enriched <- left_join(x = flights, y = airlines, by = "carrier")
 
+flights_enriched
+
+fly_into_sfo_only <- flights_enriched %>% 
+  filter(dest == "SFO") %>%
+  group_by(name) %>% 
+  summarize(flights_to_sfo = n()) 
+
+  
+fly_total <- flights_enriched %>% 
+  group_by(name) %>% 
+  summarize(flights_total = n())
+
+fly_into_sfo <- left_join(y = fly_total, x = fly_into_sfo_only, by = "name")
+
+fly_into_sfo %>% 
+  mutate(percent = round((flights_to_sfo/flights_total)*100,1)) %>% 
+  arrange(desc(flights_to_sfo))
 ```
 
-And here is some bonus ggplot code to plot your dataframe
+Only 5 carriers fly to SFO, with United Air Lines Inc. making most flights (6819), but Virgin America focusing on San Francisco destination most (42.6% of its flights).
+
+*And here is some bonus ggplot code to plot your dataframe*
+
+Unfortunately, the code produces an error
 
 ```{r}
 #| label: ggplot-flights-toSFO
@@ -429,7 +512,17 @@ cancellations <- flights %>%
 
 ```
 
-I want you to think how we would organise our data manipulation to create the following plot. No need to write the code, just explain in words how you would go about it.
+*I want you to think how we would organise our data manipulation to create the following plot. No need to write the code, just explain in words how you would go about it.*
+
+I believe that the graph is a bar chart on absolute number (not percentage) of cancellations by month, faceted by carrier (vertically) and airport of origin (horizontally). To build this graph, we would need the following:
+
+1.  Filter for only "SFO" airport in "dest" variable to get only flights to San Francisco
+2.  Filter for only NA values in dep_time to get only cancelled flights
+3.  Group by carrier, origin (airport of origin) and month
+4.  Summarize (count) number of cancelled flights in each group with n()
+5.  Plot the bar chart with x = months and y = count
+6.  Facet graphs by carrier and origin
+7.  Another feature of graph is label the value in each bar - probably, some additional method in ggplot2 library.
 
 ![](images/sfo-cancellations.png)
 
