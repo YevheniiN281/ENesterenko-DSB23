@@ -67,25 +67,100 @@ glimpse(mass_shootings)
 -   Generate a data frame that summarizes the number of mass shootings per year.
 
 ```{r}
-
+# Count the number of mass shootings per year
+mass_shootings %>% 
+  group_by(year) %>% 
+  summarise(number = n())
 ```
 
 -   Generate a bar chart that identifies the number of mass shooters associated with each race category. The bars should be sorted from highest to lowest and each bar should show its number.
 
 ```{r}
 
+# Counting number of shootings per race,excluding cases with unidentified race (NA)
+mass_shootings %>%
+  filter(!is.na(race)) %>% 
+  group_by(race) %>% 
+  summarise(number = n()) %>% 
+  
+  # Rearranging in descending order for total number
+  mutate(race = fct_reorder(race, number)) %>%
+  
+  # Drawing a horizontal bar chart with labels
+  ggplot(aes(x = number, y = race)) +
+  geom_col() +
+  geom_text(
+    aes(label = number, x = number - .25),
+    colour = "white",
+    size = 5,
+    hjust = 1) +
+  
+  # Adding theme and axis titles
+  theme_minimal(base_size = 12)+
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Number of shootings",
+        y = "Race"
+      ) +
+      NULL
 ```
 
 -   Generate a boxplot visualizing the number of total victims, by type of location.
 
 ```{r}
 
+# Grouping shootings by location type, excluding those with unidentified location (NA)
+mass_shootings %>%
+  filter(!is.na(location_type)) %>% 
+  group_by(location_type) %>% 
+  
+  # Drawing a boxplot
+  ggplot(aes(y = total_victims, x = location_type)) +
+  geom_boxplot() +
+  
+  # Drawing y-axis (number of shootings) in a log scale to interpret graph more easily
+  scale_y_log10() +
+  
+  # Adding theme and and axis titles
+  theme_classic(base_size = 12) +
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Type of location",
+        y = "Number of shootings"
+      ) +
+      NULL
 ```
 
 -   Redraw the same plot, but remove the Las Vegas Strip massacre from the dataset.
 
 ```{r}
 
+# Grouping shootings by location type, excluding those with unidentified location (NA)
+mass_shootings %>%
+  filter(!is.na(location_type)) %>%
+  
+  # Excluding the Las Vegas Strip massacre
+  filter(case != "Las Vegas Strip massacre") %>% 
+  group_by(location_type) %>% 
+  
+  # Drawing a boxplot
+  ggplot(aes(y = total_victims, x = location_type)) +
+  geom_boxplot() +
+  
+  # Drawing y-axis (number of shootings) in a log scale to interpret graph more easily
+  scale_y_log10() +
+  
+  # Adding theme and and axis titles
+  theme_classic(base_size = 12) +
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Type of location",
+        y = "Number of shootings"
+      ) +
+      NULL
 ```
 
 ### More open-ended questions
@@ -96,12 +171,67 @@ Address the following questions. Generate appropriate figures/tables to support 
 
 ```{r}
 
+# Selecting only cases after 2000, where the shooter was white male with prior signs of mental illness
+mass_shootings %>%
+  filter(race == "White") %>%
+  filter(male == TRUE) %>% 
+  filter(prior_mental_illness == "Yes") %>% 
+  filter(year > 2000) %>% 
+  
+  # Counting total number of cases after applyied filters
+  summarise(count = n())
 ```
 
 -   Which month of the year has the most mass shootings? Generate a bar chart sorted in chronological (natural) order (Jan-Feb-Mar- etc) to provide evidence of your answer.
 
 ```{r}
 
+# We have not found a function in lubridate library, so we will create month index manually
+mass_shootings_month <- mass_shootings %>% 
+  mutate(month_index = case_when(
+    month == "Jan" ~1,
+    month == "Feb" ~2,
+    month == "Mar" ~3,
+    month == "Apr" ~4,
+    month == "May" ~5,
+    month == "Jun" ~6,
+    month == "Jul" ~7,
+    month == "Aug" ~8,
+    month == "Sep" ~9,
+    month == "Oct" ~10,
+    month == "Nov" ~11,
+    month == "Dec" ~12,
+    TRUE ~0
+   )
+  )
+
+# Count cases of mass shooting by month and save as new data frame
+mass_shootings_month_chronological_summary <- mass_shootings_month %>% 
+  group_by(month, month_index) %>%
+  summarise(count = n()) %>% 
+  
+  # We arrange in chronological order using month index (Jan = 1, Dec = 12)
+  arrange(month_index)
+
+
+# Attempt to arrange bar chart in chronologocal order usung month index (unsuccessful)
+mass_shootings_month_chronological_summary %>% 
+  slice_max(order_by = month_index, n=12) %>% 
+
+  
+# Drawing a vertical bar chart with labels
+  ggplot(aes(x = month, y = count)) +
+  geom_col() +
+  
+  # Adding theme and axis titles
+  theme_minimal(base_size = 12) +
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Number of shootings",
+        y = "Month"
+      ) +
+      NULL
 ```
 
 -   How does the distribution of mass shooting fatalities differ between White and Black shooters? What about White and Latino shooters?
