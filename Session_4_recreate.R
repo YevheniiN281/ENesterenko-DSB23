@@ -669,7 +669,7 @@ exams %>%
 
 # Drop lowest score and recompute mean
 
-(sum(`.input`) - min(`.input`)) / 9
+# (sum(`.input`) - min(`.input`)) / 9
 
 exams %>% 
   map_dbl(~(sum(.) - min(.)) / 9) %>% 
