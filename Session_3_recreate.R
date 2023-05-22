@@ -11,6 +11,10 @@ bikes <- bikes %>%
     month = month(date),
     month_name=month(date, label = TRUE)) 
 
+# head(bikes)
+
+# skimr::skim(bikes)
+
 # generate new variable season_name to turn seasons from numbers to Winter, Spring, etc
 bikes <- bikes %>%  
   mutate(
@@ -217,6 +221,7 @@ base_graph +
 base_graph +
   geom_rug(
     alpha = .2
+  )
     
     ## Extend a ggplot Object: Add Labels
     base_graph +
@@ -344,7 +349,7 @@ base_graph +
       ) +
       NULL
     
-    ## Create the following from the IMDB `movies` data
+    ## Create the following from the IMDB movies data
     movies %>% 
       slice_max(order_by = gross, n=20) %>% 
       mutate(title = fct_reorder(title, gross)) %>%  
@@ -403,7 +408,12 @@ base_graph +
         caption = "Data Source: Gapminder Project"
       )
     
-    ## `ggThemeAssist` add-in
+    ## ggThemeAssist add-in
     https://github.com/calligross/ggthemeassist
     
+    
+    if (!requireNamespace("devtools", quietly = TRUE))
+      install.packages("devtools")
+    
+    devtools::install_github("calligross/ggthemeassist")
     
