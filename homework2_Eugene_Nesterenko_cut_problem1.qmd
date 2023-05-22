@@ -1,0 +1,235 @@
+---
+title: "Homerwork 2"
+author: "Eugene Nesterenko"
+date: 2023-05-21
+format: 
+  docx: default
+  html:
+    toc: true
+    toc_float: true
+    code-fold: true
+editor: visual
+---
+
+```{r}
+#| label: load-libraries
+#| echo: false # This option disables the printing of code (only output is displayed).
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(wbstats)
+library(skimr)
+library(countrycode)
+library(here)
+```
+
+# Data Visualisation - Exploration
+
+Now that you've demonstrated your software is setup, and you have the basics of data manipulation, the goal of this assignment is to practice transforming, visualising, and exploring data.
+
+# Mass shootings in the US
+
+In July 2012, in the aftermath of a mass shooting in a movie theater in Aurora, Colorado, [Mother Jones](https://www.motherjones.com/politics/2012/07/mass-shootings-map/) published a report on mass shootings in the United States since 1982. Importantly, they provided the underlying data set as [an open-source database](https://www.motherjones.com/politics/2012/12/mass-shootings-mother-jones-full-data/) for anyone interested in studying and understanding this criminal behavior.
+
+## Obtain the data
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+
+mass_shootings <- read_csv(here::here("data", "mass_shootings.csv"))
+
+glimpse(mass_shootings)
+```
+
+| column(variable)     | description                                                                 |
+|--------------------------|----------------------------------------------|
+| case                 | short name of incident                                                      |
+| year, month, day     | year, month, day in which the shooting occurred                             |
+| location             | city and state where the shooting occcurred                                 |
+| summary              | brief description of the incident                                           |
+| fatalities           | Number of fatalities in the incident, excluding the shooter                 |
+| injured              | Number of injured, non-fatal victims in the incident, excluding the shooter |
+| total_victims        | number of total victims in the incident, excluding the shooter              |
+| location_type        | generic location in which the shooting took place                           |
+| male                 | logical value, indicating whether the shooter was male                      |
+| age_of_shooter       | age of the shooter when the incident occured                                |
+| race                 | race of the shooter                                                         |
+| prior_mental_illness | did the shooter show evidence of mental illness prior to the incident?      |
+
+## Explore the data
+
+### Specific questions
+
+-   Generate a data frame that summarizes the number of mass shootings per year.
+
+```{r}
+# Count the number of mass shootings per year
+mass_shootings %>% 
+  group_by(year) %>% 
+  summarise(number = n())
+```
+
+-   Generate a bar chart that identifies the number of mass shooters associated with each race category. The bars should be sorted from highest to lowest and each bar should show its number.
+
+```{r}
+
+# Counting number of shootings per race,excluding cases with unidentified race (NA)
+mass_shootings %>%
+  filter(!is.na(race)) %>% 
+  group_by(race) %>% 
+  summarise(number = n()) %>% 
+  
+  # Rearranging in descending order for total number
+  mutate(race = fct_reorder(race, number)) %>%
+  
+  # Drawing a horizontal bar chart with labels
+  ggplot(aes(x = number, y = race)) +
+  geom_col() +
+  geom_text(
+    aes(label = number, x = number - .25),
+    colour = "white",
+    size = 5,
+    hjust = 1) +
+  
+  # Adding theme and axis titles
+  theme_minimal(base_size = 12)+
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Number of shootings",
+        y = "Race"
+      ) +
+      NULL
+```
+
+-   Generate a boxplot visualizing the number of total victims, by type of location.
+
+```{r}
+
+# Grouping shootings by location type, excluding those with unidentified location (NA)
+mass_shootings %>%
+  filter(!is.na(location_type)) %>% 
+  group_by(location_type) %>% 
+  
+  # Drawing a boxplot
+  ggplot(aes(y = total_victims, x = location_type)) +
+  geom_boxplot() +
+  
+  # Drawing y-axis (number of shootings) in a log scale to interpret graph more easily
+  scale_y_log10() +
+  
+  # Adding theme and and axis titles
+  theme_classic(base_size = 12) +
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Type of location",
+        y = "Number of shootings"
+      ) +
+      NULL
+```
+
+-   Redraw the same plot, but remove the Las Vegas Strip massacre from the dataset.
+
+```{r}
+
+# Grouping shootings by location type, excluding those with unidentified location (NA)
+mass_shootings %>%
+  filter(!is.na(location_type)) %>%
+  
+  # Excluding the Las Vegas Strip massacre
+  filter(case != "Las Vegas Strip massacre") %>% 
+  group_by(location_type) %>% 
+  
+  # Drawing a boxplot
+  ggplot(aes(y = total_victims, x = location_type)) +
+  geom_boxplot() +
+  
+  # Drawing y-axis (number of shootings) in a log scale to interpret graph more easily
+  scale_y_log10() +
+  
+  # Adding theme and and axis titles
+  theme_classic(base_size = 12) +
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Type of location",
+        y = "Number of shootings"
+      ) +
+      NULL
+```
+
+### More open-ended questions
+
+Address the following questions. Generate appropriate figures/tables to support your conclusions.
+
+-   How many white males with prior signs of mental illness initiated a mass shooting after 2000?
+
+```{r}
+
+# Selecting only cases after 2000, where the shooter was white male with prior signs of mental illness
+mass_shootings %>%
+  filter(race == "White") %>%
+  filter(male == TRUE) %>% 
+  filter(prior_mental_illness == "Yes") %>% 
+  filter(year > 2000) %>% 
+  
+  # Counting total number of cases after applyied filters
+  summarise(count = n())
+```
+
+-   Which month of the year has the most mass shootings? Generate a bar chart sorted in chronological (natural) order (Jan-Feb-Mar- etc) to provide evidence of your answer.
+
+```{r}
+
+# We have not found a function in lubridate library, so we will create month index manually
+mass_shootings_month <- mass_shootings %>% 
+  mutate(month_index = case_when(
+    month == "Jan" ~1,
+    month == "Feb" ~2,
+    month == "Mar" ~3,
+    month == "Apr" ~4,
+    month == "May" ~5,
+    month == "Jun" ~6,
+    month == "Jul" ~7,
+    month == "Aug" ~8,
+    month == "Sep" ~9,
+    month == "Oct" ~10,
+    month == "Nov" ~11,
+    month == "Dec" ~12,
+    TRUE ~0
+   )
+  )
+
+# Count cases of mass shooting by month and save as new data frame
+mass_shootings_month_chronological_summary <- mass_shootings_month %>% 
+  group_by(month, month_index) %>%
+  summarise(count = n()) %>% 
+  
+  # We arrange in chronological order using month index (Jan = 1, Dec = 12)
+  arrange(month_index)
+
+
+# Attempt to arrange bar chart in chronologocal order usung month index (unsuccessful)
+mass_shootings_month_chronological_summary %>% 
+  slice_max(order_by = month_index, n=12) %>% 
+
+  
+# Drawing a vertical bar chart with labels
+  ggplot(aes(x = month, y = count)) +
+  geom_col() +
+  
+  # Adding theme and axis titles
+  theme_minimal(base_size = 12) +
+  labs(
+        title = "",
+        subtitle = "",
+        x = "Number of shootings",
+        y = "Month"
+      ) +
+      NULL
+```
