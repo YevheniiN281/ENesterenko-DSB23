@@ -70,6 +70,7 @@ table3
 table4a
 table4b
 
+# new comment
 
 # Ways data tend not to be tidy{.smaller}
 # Column headers are values, not variable names.
