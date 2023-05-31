@@ -1,8 +1,12 @@
 ---
-title: "Homework 3: Databases, web scraping, and a basic Shiny app"
+title: 'Homework 3: Databases, web scraping, and a basic Shiny app'
 author: "Eugene Nesterenko, github YevheniiN281"
 date: "`r Sys.Date()`"
 output:
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
   html_document:
     theme: flatly
     highlight: zenburn
@@ -10,8 +14,6 @@ output:
     toc: yes
     toc_float: yes
     code_folding: show
-  pdf_document:
-    toc: yes
 ---
 
 ```{r}
@@ -103,7 +105,6 @@ top_members <- left_join(x = payments, y = members, by = c("member_id"="id")) %>
   group_by(name) %>% 
   summarize(total_donations_000 = round(sum(value) / 1000,0)) %>% 
   select(name, total_donations_000) %>% 
-  # arrange(desc(total_donations_000)) %>% 
   slice_max(order_by = total_donations_000, n=10)
 
 
@@ -171,24 +172,24 @@ entity_donations <- payments %>%
   
   # Select only entity and percentage of donations, arrange from largest to smallest percentage
   select(entity, percent_donations) %>% 
-  # arrange(desc(percent_donations)) %>% 
   
   slice_max(order_by = percent_donations, n=10)
 
 df_entity_donations <- as.data.frame(entity_donations)
 
 #define colours to use: grey for everything, tomato for major donors (>5%)
-my_colours <- c("grey80", "tomato") 
+my_colours <- c("grey80", "navy") 
 
 df_entity_donations %>% 
   
+  # Reordering donors by % of donations (descending) and marking the donors who contributed more than 5%
   mutate(
     major_donor = ifelse(percent_donations > 5,TRUE,FALSE),
     entity = forcats::fct_reorder(entity, percent_donations)
     ) %>%
 
 
-  
+  # Building a horizontal bar chart for the percentage of donations
   ggplot(aes(y = entity , x = percent_donations, fill = major_donor)) +
   geom_col(show.legend = FALSE) +
   scale_fill_manual(values = my_colours) +
@@ -202,7 +203,7 @@ df_entity_donations %>%
   theme_minimal(base_size = 12)+
   labs(
         title = "",
-        subtitle = "Withers LLP is the only entity that contributed more than 5% of total donations",
+        subtitle = "Withers LLP contributed more than 5% of total donations",
         x = "Percent of donations",
         y = NULL
       ) +
