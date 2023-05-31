@@ -55,9 +55,27 @@ sky_westminster <- DBI::dbConnect(
   drv = RSQLite::SQLite(),
   dbname = here::here("data", "sky-westminster-files.db")
 )
+
+class(sky_westminster)
 ```
 
 How many tables does the database have?
+
+The table has 7 tables:
+
+-   appg_donatons
+
+-   appgs
+
+-   member_appgs
+
+-   members
+
+-   parties
+
+-   party_donations
+
+-   payments
 
 ```{r}
 DBI::dbListTables(sky_westminster)
@@ -76,26 +94,51 @@ members <- dplyr::tbl(sky_westminster, "members")
 
 payments_members <- left_join(x = payments, y = members, by = c("member_id"="id"))
 
-sprintf("£ %.0f", 2024020.34221)
+
 
 library(forcats)
 
-x <- left_join(x = payments, y = members, by = c("member_id"="id")) %>% 
+# Creating a dataframe with top-10 members by size of total donaions
+top_members <- left_join(x = payments, y = members, by = c("member_id"="id")) %>% 
   group_by(name) %>% 
   summarize(total_donations_000 = round(sum(value) / 1000,0)) %>% 
   select(name, total_donations_000) %>% 
-  arrange(desc(total_donations_000)) %>% 
+  # arrange(desc(total_donations_000)) %>% 
   slice_max(order_by = total_donations_000, n=10)
 
-y<-as.data.frame(x)
 
-y %>%    
+# converting to dataframe 
+# (for some reason R did not treat "top_members" as dataframe, which resulted in problems when applying fct_reorder function)
+df_top_members <-as.data.frame(top_members)
+
+my_colours_2 <- c("grey80", "navy") 
+
+# Building a bar chart for the top-10 members by size of donation in a descending order
+df_top_members %>%    
   
-  mutate(name = forcats::fct_reorder(name, total_donations_000)) %>%
+  mutate(
+    million_donations = ifelse(total_donations_000 >= 1000, TRUE, FALSE),
+    name = forcats::fct_reorder(name, total_donations_000)
+    ) %>%
   
-  ggplot(aes(y = name , x = total_donations_000)) +
-  geom_col()
-           
+  ggplot(aes(y = name , x = total_donations_000, fill = million_donations)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = my_colours_2) +
+  geom_text(
+    aes(label = total_donations_000, x = total_donations_000 - .25),
+    colour = "white",
+    size = 5,
+    hjust = 1) +
+  
+  # Adding theme and axis titles
+  theme_minimal(base_size = 12)+
+  labs(
+        title = "",
+        subtitle = "Only 3 MPs received more than £1m in donations",
+        x = "Donations, £'000",
+        y = NULL
+      ) +
+      NULL
 ```
 
 ## Any `entity` that accounts for more than 5% of all donations?
@@ -105,10 +148,6 @@ Is there any `entity` whose donations account for more than 5% of the total paym
 ```{r}
 #| label: entities with >5% donations
 
-# Reference the tables from the database
-payments <- dplyr::tbl(sky_westminster, "payments")
-members <- dplyr::tbl(sky_westminster, "members")
-
 # Function to return last n characters
 library(stringr)
 
@@ -117,7 +156,7 @@ payments <- payments %>%
   mutate(year = as.integer(str_sub(date,-4)))
 
 # Summarize percentage of total donations by entity
-payments %>% 
+entity_donations <- payments %>% 
   
   # Include only years 2020-2022
   filter(year %in% c(2020:2022)) %>%
@@ -131,7 +170,42 @@ payments %>%
   
   # Select only entity and percentage of donations, arrange from largest to smallest percentage
   select(entity, percent_donations) %>% 
-  arrange(desc(percent_donations))
+  # arrange(desc(percent_donations)) %>% 
+  
+  slice_max(order_by = percent_donations, n=10)
+
+df_entity_donations <- as.data.frame(entity_donations)
+
+#define colours to use: grey for everything, tomato for major donors (>5%)
+my_colours <- c("grey80", "tomato") 
+
+df_entity_donations %>% 
+  
+  mutate(
+    major_donor = ifelse(percent_donations > 5,TRUE,FALSE),
+    entity = forcats::fct_reorder(entity, percent_donations)
+    ) %>%
+
+
+  
+  ggplot(aes(y = entity , x = percent_donations, fill = major_donor)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = my_colours) +
+  geom_text(
+    aes(label = percent_donations, x = percent_donations - .05),
+    colour = "white",
+    size = 5,
+    hjust = 1) +
+  
+  # Adding theme and axis titles
+  theme_minimal(base_size = 12)+
+  labs(
+        title = "",
+        subtitle = "Withers LLP is the only entity that contributed more than 5% of total donations",
+        x = "Percent of donations",
+        y = NULL
+      ) +
+      NULL
 ```
 
 ## Do `entity` donors give to a single party or not?
@@ -329,9 +403,8 @@ Can you get all pages of ads, and not just the first one, `https://www.consultan
 
     -   Given that you have to scrape `...jobs/page/1`, `...jobs/page/2`, etc., define your URL so you can join multiple stings into one string, using `str_c()`. For instnace, if `page` is 5, what do you expect the following code to produce?
 
-```{=html}
 <!-- -->
-```
+
     base_url <- "https://www.consultancy.uk/jobs/page/1"
     url <- str_c(base_url, page)
 
