@@ -32,19 +32,17 @@ library(scales)
 library(vip)
 ```
 
-
 # The Bechdel Test
 
-https://fivethirtyeight.com/features/the-dollar-and-cents-case-against-hollywoods-exclusion-of-women/
+<https://fivethirtyeight.com/features/the-dollar-and-cents-case-against-hollywoods-exclusion-of-women/>
 
-The [Bechdel test](https://bechdeltest.com) is a way to assess how women are depicted in Hollywood movies.  In order for a movie to pass the test:
+The [Bechdel test](https://bechdeltest.com) is a way to assess how women are depicted in Hollywood movies. In order for a movie to pass the test:
 
-1. It has to have at least two [named] women in it
-2. Who talk to each other
-3. About something besides a man
+1.  It has to have at least two [named] women in it
+2.  Who talk to each other
+3.  About something besides a man
 
-There is a nice article and analysis you can find here https://fivethirtyeight.com/features/the-dollar-and-cents-case-against-hollywoods-exclusion-of-women/
-We have a sample of 1394 movies and we want to fit a model to predict whether a film passes the test or not.
+There is a nice article and analysis you can find here <https://fivethirtyeight.com/features/the-dollar-and-cents-case-against-hollywoods-exclusion-of-women/> We have a sample of 1394 movies and we want to fit a model to predict whether a film passes the test or not.
 
 ```{r read_data}
 
@@ -53,14 +51,23 @@ bechdel <- read_csv(here::here("data", "bechdel.csv")) %>%
 glimpse(bechdel)
 
 ```
+
 How many films fail/pass the test, both as a number and as a %?
 
 ```{r}
 
+# Grouping the data by pass/fail criterion, counting occurances and percantage of each
+bechdel %>% 
+  group_by(test) %>% 
+  summarize(count = n()) %>% 
+  mutate(percentage = round(count/sum(count)*100,1)) %>% 
+  print()
 ```
 
+772 movies (55.4%) **fail** the Bechdel test, while only 622 (44.6%) **pass** it
 
 ## Movie scores
+
 ```{r}
 ggplot(data = bechdel, aes(
   x = metascore,
@@ -77,8 +84,8 @@ ggplot(data = bechdel, aes(
  theme_light()
 ```
 
-
 # Split the data
+
 ```{r}
 # **Split the data**
 
@@ -93,13 +100,32 @@ bechdel_test <- testing(data_split)
 ```
 
 Check the counts and % (proportions) of the `test` variable in each set.
+
 ```{r}
 
+# Grouping the data by pass/fail criterion, counting occurances and percantage of each
+# Apply separately to training sample
+bechdel_train %>% 
+  group_by(test) %>% 
+  summarize(count = n()) %>% 
+  mutate(percentage = round(count/sum(count)*100,1)) %>% 
+  print()
+
+
+# Grouping the data by pass/fail criterion, counting occurances and percantage of each
+# Apply separately to testing sample
+bechdel_test %>% 
+  group_by(test) %>% 
+  summarize(count = n()) %>% 
+  mutate(percentage = round(count/sum(count)*100,1)) %>% 
+  print()
 ```
+
+Both in the **training sample** and in the **testing sample** proportion of films who pass (fail) remains the same - 55.4% (44.6%), which indicates a good split, **both samples are representative**. Counts are proportionately lower, roughly in line with 80/20 split (to be precise, 79.9/20.1). Total count in both divided samples and undivided population is 1394, which means **no observation were omitted**.
 
 ## Feature exploration
 
-## Any outliers? 
+## Any outliers?
 
 ```{r}
 
@@ -120,9 +146,12 @@ bechdel %>%
 
 ```
 
+TBA - paragraph on outliers
+
 ## Scatterplot - Correlation Matrix
 
-Write a paragraph discussing the output of the following 
+Write a paragraph discussing the output of the following
+
 ```{r, warning=FALSE, message=FALSE}
 bechdel %>% 
   select(test, budget_2013, domgross_2013, intgross_2013, imdb_rating, metascore)%>% 
@@ -130,10 +159,12 @@ bechdel %>%
   theme_bw()
 ```
 
+TBA - explain
 
 ## Categorical variables
 
-Write a paragraph discussing the output of the following 
+Write a paragraph discussing the output of the following
+
 ```{r}
 bechdel %>% 
   group_by(genre, test) %>%
@@ -146,6 +177,8 @@ bechdel %>%
   summarise(n = n()) %>% 
   mutate(prop = n/sum(n))
 ```
+
+TBA - write about the differences and what could be a good predictor
 
 # Train first models. `test ~ metascore + imdb_rating`
 
@@ -200,11 +233,13 @@ lr_preds %>%
 
 ```
 
+TBA - comment on quality. At first glance - not very good, big proportion of errors (but probably better than naive model predicting Fail all the time)
 
 ## Decision Tree
+
 ```{r}
 tree_preds <- tree_fit %>%
-  augment(new_data = bechdel) %>%
+  augment(new_data = bechdel_train) %>%
   mutate(.pred_match = if_else(test == .pred_class, 1, 0)) 
 
 
@@ -215,6 +250,12 @@ tree_preds %>%
   conf_mat(truth = test, estimate = .pred_class) %>% 
   autoplot(type = "heatmap")
 ```
+
+We have amended the code to use the same training sample
+
+More or less the same, with larger percentage of false positives (14% vs 12% in logistic regression) but lower percentage of false negatives (28% vs 29%)
+
+TBA further
 
 ## Draw the decision tree
 
@@ -242,6 +283,8 @@ bechdel_folds <- vfold_cv(data = bechdel_train,
 bechdel_folds
 ```
 
+??? It just returns a list of 10 folds (splits) ??? Probably to use it later in a loop
+
 ## `fit_resamples()`
 
 Trains and tests a resampled model.
@@ -250,6 +293,8 @@ Trains and tests a resampled model.
 lr_fit <- lr_mod %>%
   fit_resamples(
     test ~ metascore + imdb_rating,
+    
+    # Instead of data, the argument is resamples - perhaps, to use in a loop?
     resamples = bechdel_folds
   )
 
@@ -261,10 +306,10 @@ tree_fit <- tree_mod %>%
   )
 ```
 
-
 ## `collect_metrics()`
 
 Unnest the metrics column from a tidymodels `fit_resamples()`
+
 ```{r}
 
 collect_metrics(lr_fit)
@@ -273,6 +318,7 @@ collect_metrics(tree_fit)
 
 ```
 
+What does it mean???
 
 ```{r}
 tree_preds <- tree_mod %>% 
@@ -295,28 +341,28 @@ tree_preds %>%
 
 ```
 
+Comment on ROC-curve
 
 # Build a better training set with `recipes`
 
 ## Preprocessing options
 
-- Encode categorical predictors
-- Center and scale variables
-- Handle class imbalance
-- Impute missing data
-- Perform dimensionality reduction 
-- ... ...
+-   Encode categorical predictors
+-   Center and scale variables
+-   Handle class imbalance
+-   Impute missing data
+-   Perform dimensionality reduction
+-   ... ...
 
 ## To build a recipe
 
-1. Start the `recipe()`
-1. Define the variables involved
-1. Describe **prep**rocessing [step-by-step]
+1.  Start the `recipe()`
+2.  Define the variables involved
+3.  Describe **prep**rocessing [step-by-step]
 
 ## Collapse Some Categorical Levels
 
-Do we have any `genre` with few observations?  Assign genres that have less than 3% to a new category 'Other'
-
+Do we have any `genre` with few observations? Assign genres that have less than 3% to a new category 'Other'
 
 ```{r}
 #| echo = FALSE
@@ -330,8 +376,20 @@ bechdel %>%
   labs(x = NULL) +
   geom_hline(yintercept = (nrow(bechdel_train)*.03), lty = 3)+
   theme_light()
-```
 
+# Obsolete code
+# bechdel_genre_collapsed <-bechdel %>% 
+#   count(genre) %>% 
+#   mutate(genre = ifelse(n < nrow(bechdel_train)*.03, "Other", genre))
+# 
+# bechdel_genre_collapsed
+# 
+# bechdel_genre_collapsed2 <- bechdel_genre_collapsed %>% 
+#   group_by(genre) %>% 
+#   summarize(count = sum(n))
+# 
+# bechdel_genre_collapsed2
+```
 
 ```{r}
 movie_rec <-
@@ -341,7 +399,6 @@ movie_rec <-
   # Genres with less than 5% will be in a catewgory 'Other'
     step_other(genre, threshold = .03) 
 ```
-  
 
 ## Before recipe
 
@@ -350,7 +407,6 @@ movie_rec <-
 bechdel_train %>% 
   count(genre, sort = TRUE)
 ```
-
 
 ## After recipe
 
@@ -374,12 +430,18 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
 movie_rec 
 ```
 
-## Let's think about the modelling 
+## Let's think about the modelling
 
 What if there were no films with `rated` NC-17 in the training data?
 
--  Will the model have a coefficient for `rated` NC-17?
--  What will happen if the test data includes a film with `rated` NC-17?
+-   Will the model have a coefficient for `rated` NC-17?
+-   What will happen if the test data includes a film with `rated` NC-17?
+
+The model will have no coefficient, because the dummy variable for the NC-17 would not be created in the first place. Subsequently, if test data includes such observations, two things could happen:
+
+-   The model breaks down as it does not know how to interpret new value of the variable (or it splits new variables in a list of dummys with 1 extra compared to the testing sample)
+
+-   The model just ignores the unknown value, applying 0 to all dummies and in fact using the implied coefficient for the base value (say, rating "G"). However, actual category ("NC-17") is different, which would distort prediction capabilities.
 
 ## `step_novel()`
 
@@ -394,7 +456,6 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
 
 ```
 
-
 ## `step_zv()`
 
 Intelligently handles zero variance variables (variables that contain only a single value)
@@ -407,7 +468,6 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_zv(all_numeric(), -all_outcomes()) 
   
 ```
-
 
 ## `step_normalize()`
 
@@ -423,7 +483,6 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
 
 ```
 
-
 ## `step_corr()`
 
 Removes highly correlated variables
@@ -434,14 +493,13 @@ movie_rec <- recipe(test ~ ., data = bechdel) %>%
   step_novel(all_nominal(), -all_outcomes()) %>% # Use *before* `step_dummy()` so new level is dummified
   step_dummy(all_nominal(), -all_outcomes()) %>% 
   step_zv(all_numeric(), -all_outcomes())  %>% 
-  step_normalize(all_numeric()) %>% 
-  step_corr(all_predictors(), threshold = 0.75, method = "spearman") 
+  step_normalize(all_numeric()) #   Remove the last line to save processing time %>% 
+ # step_corr(all_predictors(), threshold = 0.75, method = "spearman") 
 
 
 
 movie_rec
 ```
-
 
 # Define different models to fit
 
@@ -491,9 +549,7 @@ knn_spec <-
   set_mode("classification") 
 ```
 
-
 # Bundle recipe and model with `workflows`
-
 
 ```{r}
 log_wflow <- # new workflow object
@@ -531,21 +587,17 @@ knn_wflow <-
 
 HEADS UP
 
-1. How many models have you specified?
-2. What's the difference between a model specification and a workflow?
-3. Do you need to add a formula (e.g., `test ~ .`)  if you have a recipe?
-
+1.  How many models have you specified? **5**
+2.  What's the difference between a model specification and a workflow? **TBA**
+3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe? **Yes, because we want to test our hypothesis if the classification result depends on particular variables**
 
 # Model Comparison
 
-You now have all your models. Adapt the code from slides `code-from-slides-CA-housing.R`, line 400 onwards to assess which model gives you the best classification. 
-
+You now have all your models. Adapt the code from slides `code-from-slides-CA-housing.R`, line 400 onwards to assess which model gives you the best classification.
 
 ```{r}
 
 ```
-
-
 
 # Deliverables
 
