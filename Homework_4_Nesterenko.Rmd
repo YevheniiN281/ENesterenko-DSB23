@@ -596,7 +596,39 @@ HEADS UP
 You now have all your models. Adapt the code from slides `code-from-slides-CA-housing.R`, line 400 onwards to assess which model gives you the best classification.
 
 ```{r}
+log_res <- log_wflow %>% 
+  fit_resamples(
+    resamples = bechdel_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, accuracy,
+      kap, roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)) 
 
+
+log_res %>%  collect_metrics(summarize = TRUE)
+
+log_res %>%  collect_metrics(summarize = FALSE)
+```
+
+Try with specifying variables
+
+```{r}
+log_res_cut <- log_wflow %>%
+  
+    # fit(test ~ metascore + imdb_rating, # a formula
+    # data = bechdel_train # dataframe
+  
+  fit_resamples(
+    resamples = bechdel_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, accuracy,
+      kap, roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)) 
+
+
+log_res_cut %>%  collect_metrics(summarize = TRUE)
+
+log_res_cut %>%  collect_metrics(summarize = FALSE)
 ```
 
 # Deliverables
