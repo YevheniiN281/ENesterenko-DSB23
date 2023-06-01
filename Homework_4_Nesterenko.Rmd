@@ -595,6 +595,8 @@ HEADS UP
 
 You now have all your models. Adapt the code from slides `code-from-slides-CA-housing.R`, line 400 onwards to assess which model gives you the best classification.
 
+**LOGISTIC REGRESSION**
+
 ```{r}
 log_res <- log_wflow %>% 
   fit_resamples(
@@ -610,14 +612,42 @@ log_res %>%  collect_metrics(summarize = TRUE)
 log_res %>%  collect_metrics(summarize = FALSE)
 ```
 
-Try with specifying variables
+**Collect results to compare further**
 
 ```{r}
-log_res_cut <- log_wflow %>%
-  
-    # fit(test ~ metascore + imdb_rating, # a formula
-    # data = bechdel_train # dataframe
-  
+## `collect_predictions()` and get confusion matrix{.smaller}
+
+log_pred <- log_res %>% collect_predictions()
+
+log_pred %>%  conf_mat(test, .pred_class) 
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "mosaic") +
+  geom_label(aes(
+      x = (xmax + xmin) / 2, 
+      y = (ymax + ymin) / 2, 
+      label = c("TP", "FN", "FP", "TN")))
+
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "heatmap")
+
+
+## ROC Curve
+
+log_pred %>% 
+  group_by(id) %>% # id contains our folds
+  roc_curve(test, .pred_Pass) %>% 
+  autoplot()
+
+```
+
+**DECISION TREE**
+
+```{r}
+tree_res <- tree_wflow %>% 
   fit_resamples(
     resamples = bechdel_folds, 
     metrics = metric_set(
@@ -626,9 +656,168 @@ log_res_cut <- log_wflow %>%
     control = control_resamples(save_pred = TRUE)) 
 
 
-log_res_cut %>%  collect_metrics(summarize = TRUE)
+tree_res %>%  collect_metrics(summarize = TRUE)
 
-log_res_cut %>%  collect_metrics(summarize = FALSE)
+tree_res %>%  collect_metrics(summarize = FALSE)
+
+## `collect_predictions()` and get confusion matrix{.smaller}
+
+tree_pred <- tree_res %>% collect_predictions()
+
+tree_pred %>%  conf_mat(test, .pred_class) 
+
+tree_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "mosaic") +
+  geom_label(aes(
+      x = (xmax + xmin) / 2, 
+      y = (ymax + ymin) / 2, 
+      label = c("TP", "FN", "FP", "TN")))
+
+
+tree_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "heatmap")
+
+
+## ROC Curve
+
+tree_pred %>% 
+  group_by(id) %>% # id contains our folds
+  roc_curve(test, .pred_Pass) %>% 
+  autoplot()
+```
+
+**RANDOM FOREST**
+
+```{r}
+log_res <- log_wflow %>% 
+  fit_resamples(
+    resamples = bechdel_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, accuracy,
+      kap, roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)) 
+
+
+log_res %>%  collect_metrics(summarize = TRUE)
+
+log_res %>%  collect_metrics(summarize = FALSE)
+
+## `collect_predictions()` and get confusion matrix{.smaller}
+
+log_pred <- log_res %>% collect_predictions()
+
+log_pred %>%  conf_mat(test, .pred_class) 
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "mosaic") +
+  geom_label(aes(
+      x = (xmax + xmin) / 2, 
+      y = (ymax + ymin) / 2, 
+      label = c("TP", "FN", "FP", "TN")))
+
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "heatmap")
+
+
+## ROC Curve
+
+log_pred %>% 
+  group_by(id) %>% # id contains our folds
+  roc_curve(test, .pred_Pass) %>% 
+  autoplot()
+```
+
+**GRADIENT BOOSTING**
+
+```{r}
+log_res <- log_wflow %>% 
+  fit_resamples(
+    resamples = bechdel_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, accuracy,
+      kap, roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)) 
+
+
+log_res %>%  collect_metrics(summarize = TRUE)
+
+log_res %>%  collect_metrics(summarize = FALSE)
+
+## `collect_predictions()` and get confusion matrix{.smaller}
+
+log_pred <- log_res %>% collect_predictions()
+
+log_pred %>%  conf_mat(test, .pred_class) 
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "mosaic") +
+  geom_label(aes(
+      x = (xmax + xmin) / 2, 
+      y = (ymax + ymin) / 2, 
+      label = c("TP", "FN", "FP", "TN")))
+
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "heatmap")
+
+
+## ROC Curve
+
+log_pred %>% 
+  group_by(id) %>% # id contains our folds
+  roc_curve(test, .pred_Pass) %>% 
+  autoplot()
+```
+
+**??? KNN ???**
+
+```{r}
+log_res <- log_wflow %>% 
+  fit_resamples(
+    resamples = bechdel_folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, accuracy,
+      kap, roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)) 
+
+
+log_res %>%  collect_metrics(summarize = TRUE)
+
+log_res %>%  collect_metrics(summarize = FALSE)
+
+## `collect_predictions()` and get confusion matrix{.smaller}
+
+log_pred <- log_res %>% collect_predictions()
+
+log_pred %>%  conf_mat(test, .pred_class) 
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "mosaic") +
+  geom_label(aes(
+      x = (xmax + xmin) / 2, 
+      y = (ymax + ymin) / 2, 
+      label = c("TP", "FN", "FP", "TN")))
+
+
+log_pred %>% 
+  conf_mat(test, .pred_class) %>% 
+  autoplot(type = "heatmap")
+
+
+## ROC Curve
+
+log_pred %>% 
+  group_by(id) %>% # id contains our folds
+  roc_curve(test, .pred_Pass) %>% 
+  autoplot()
 ```
 
 # Deliverables
