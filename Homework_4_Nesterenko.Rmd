@@ -64,7 +64,7 @@ bechdel %>%
   print()
 ```
 
-772 movies (55.4%) **fail** the Bechdel test, while only 622 (44.6%) **pass** it
+772 movies (55.4%) **fail** the Bechdel test, while only 622 (44.6%) **pass** it. The naive prediction would be that every movie fails the Bechdel test, and we expect it to be correct in 55.4% of cases.
 
 ## Movie scores
 
@@ -83,6 +83,8 @@ ggplot(data = bechdel, aes(
   ) +
  theme_light()
 ```
+
+There seem to be a positive correlation of IMDB rating and Metacritic score (which is natural if both ratings assess a common factor - the "true" quality of the movie). However, it's hard to tell from the graph whether there is correlation or causal relationship between rating and ability to pass Bechdel test.
 
 # Split the data
 
@@ -143,10 +145,19 @@ bechdel %>%
   theme_bw()+
   theme(legend.position = "none")+
   labs(x=NULL,y = NULL)
-
 ```
 
-TBA - paragraph on outliers
+Practically for any variable there is a number of outliers, most prominent for financial metrics:
+
+-   Budget: outliers start from \$15-20m
+
+-   Domestic box office: outliers collect from \$25-30m
+
+-   International box office: outliers collect from \$50-60m
+
+We can expect that on average, high-budget film have box office both in the U.S. and internationally, i.e. outliers in one variable coincide with outliers in others.
+
+For ratings, there are a few outliers for the IMDB rating (below 4-5) and practially no distinct outliers for Metacritic score. However, the latter variable also has wider interquartile range (25% - about 50 score; 75% - about 75 score).
 
 ## Scatterplot - Correlation Matrix
 
@@ -159,7 +170,7 @@ bechdel %>%
   theme_bw()
 ```
 
-TBA - explain
+***TBA - explain***
 
 ## Categorical variables
 
