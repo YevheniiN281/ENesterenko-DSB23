@@ -157,7 +157,7 @@ Practically for any variable there is a number of outliers, most prominent for f
 
 We can expect that on average, high-budget film have box office both in the U.S. and internationally, i.e. outliers in one variable coincide with outliers in others.
 
-For ratings, there are a few outliers for the IMDB rating (below 4-5) and practially no distinct outliers for Metacritic score. However, the latter variable also has wider interquartile range (25% - about 50 score; 75% - about 75 score).
+For ratings, there are a few outliers for the IMDB rating (below 4-5) and practically no distinct outliers for Metacritic score. However, the latter variable also has wider interquartile range (25% - about 50 score; 75% - about 75 score).
 
 ## Scatterplot - Correlation Matrix
 
@@ -171,6 +171,8 @@ bechdel %>%
 ```
 
 ***TBA - explain***
+
+We see pattern...
 
 ## Categorical variables
 
