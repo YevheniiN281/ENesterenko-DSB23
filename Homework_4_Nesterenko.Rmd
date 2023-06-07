@@ -1,8 +1,12 @@
 ---
-title: "Homework 4: Machine Learning"
+title: 'Homework 4: Machine Learning'
 author: "Eugene Nesterenko, github YevheniiN281"
 date: "`r Sys.Date()`"
 output:
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
   html_document:
     theme: flatly
     highlight: zenburn
@@ -10,8 +14,6 @@ output:
     toc: yes
     toc_float: yes
     code_folding: show
-  pdf_document:
-    toc: yes
 ---
 
 ```{r}
