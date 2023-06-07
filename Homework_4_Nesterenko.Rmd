@@ -170,9 +170,31 @@ bechdel %>%
   theme_bw()
 ```
 
-***TBA - explain***
+We would ignore the relation of independent variables to the "test" variable, as it was briefly discussed in the previous paragraph and would require more detailed analysis when applying the model.
 
-We see pattern...
+The independent variables distribution itself is a point of interest:
+
+-   **Money variables (budget, domestic and international box gross revenues)** are highly right skewed, with the majority observations relatively close to 0, but few are blockbuster projects with high budget and high box office. The distribution is definitely not normal, and looks much like lognormal or Poisson. There is no prominent difference between movies that pass of fail the Bechdel test.
+
+-   I**MDB rating** distribution is closer to normal, but it still exhibits a little skewness (left). The outliers are movies of a bad quality (apparently, it is easy to produce a significantly worse than average movie but extremely hard to produce a significantly better one). There is no significant difference between movies that pass of fail the Bechdel test.
+
+-   **Metacritic score** is likely normally distributed, but with a large coefficient of variation (score could go either extremely high or extremely low, there is less centered expectation of movies). There is no significant difference between movies that pass of fail the Bechdel test.
+
+Correlation analysis among independent variables provides additional insights:
+
+-   **Budget** is positively (but not perfectly) correlated with b**oth domestic and international box office**. Apparently, to produce a commercially successful product, a movie studio needs substantial investment: hire good director, scenarist, actors, allocate enough time for production. We expect a causal relationship here, as budget is spent prior to revenues.
+
+-   Obviously, **domestic and international revenues** are almost perfectly correlated, but they depend on a third factor(s) - movie quality (and probably scale, proxied by budget). If the movie is good, it would profit in both markets.
+
+-   Both ratings (**IMDB and Metacritic)** have slightly positive correlation with **revenues (domestic and international)**. We suggest that initially both variables in a pair would depend on a third factor - movie quality; but later ratings would shape viewers preferences, praising box office for good movies and hindering for bad ones.
+
+-   **Ratings themselves are highly correlated**, but we expect the relationship to be drawn from the third factor - movie quality.
+
+-   **Budget correlation with ratings is small and insignificant** - you can't just pour money and expect to people to love the movie.
+
+High correlation for pairs of variables (domestic revenues ; international revenues) and (IMDB rating ; Metacritic score) indicate a **multicollinearity**, which would impact the regression results, both estimates and standard errors.
+
+At this point, we would recommend either **omitting duplicating variables** (international revenues, Metacritic score) or trying to divide factor influence by **applying PCA** (principal component analysis). However, for the sake of this assignment, we would use the whole set of variables to train models and compare them.
 
 ## Categorical variables
 
@@ -191,7 +213,9 @@ bechdel %>%
   mutate(prop = n/sum(n))
 ```
 
-TBA - write about the differences and what could be a good predictor
+The probability to pass a score seems to vary significantly with genre. For instance, among comedies, as much as 57% of movies pass the Bechdel test, while among action movies, the rate is only 29%. (one explanation could be that action movies are typically high-violence plots with masculine characters).
+
+The influence of production rating (which is, to our understanding, a category restricting which ages audience can watch the movie) is not significant. There are categories (G and NC-17) with unusually low scores. But for the categories with large enough number of observations, difference in average probability is negligible (from 43% to 47%)
 
 # Train first models. `test ~ metascore + imdb_rating`
 
@@ -236,6 +260,8 @@ lr_preds <- lr_fit %>%
 
 ```
 
+Logistic regression seems to indicate positive influence of Metacritic score to pass the Bechdel test, and negative influence of IMDB rating, with both variables statistically significant at 95% confidence. However, potential multicollinearity between independent variables raises a question whether estimates are reliable. In particular, it seems counterintuitive that one rating favors the probability of passing the Bechdel test while another one hinders it.
+
 ### Confusion matrix
 
 ```{r}
@@ -246,7 +272,7 @@ lr_preds %>%
 
 ```
 
-TBA - comment on quality. At first glance - not very good, big proportion of errors (but probably better than naive model predicting Fail all the time)
+In our opinion, model quality is not very good, both in terms of prediction capability (12.3% false positives as opposed to 15.2% true positives) and test power (29.4% of false negatives compared to 43.1% of true negatives). However, it is still marginally better than the naive model predicting Fail all the time (58.3% of total correct predictions vs 55.4%)
 
 ## Decision Tree
 
@@ -264,11 +290,9 @@ tree_preds %>%
   autoplot(type = "heatmap")
 ```
 
-We have amended the code to use the same training sample
+We have amended the code to use the same training sample as in case with logistic regression.
 
-More or less the same, with larger percentage of false positives (14% vs 12% in logistic regression) but lower percentage of false negatives (28% vs 29%)
-
-TBA further
+The result is more or less the same, with larger percentage of false positives (14% vs 12% in logistic regression) but lower percentage of false negatives (28% vs 29%). Overall, the choice of model would depend on what is more important to the researcher - predict the pass correctly or not making a mistake of failing to predict a pass.
 
 ## Draw the decision tree
 
@@ -284,6 +308,8 @@ plot(draw_tree)
 
 ```
 
+The decision tree seems to be too detailed, with frequently less than 10 observations in each bucket. We suspect the problem of overfitting.
+
 # Cross Validation
 
 Run the code below. What does it return?
@@ -296,7 +322,7 @@ bechdel_folds <- vfold_cv(data = bechdel_train,
 bechdel_folds
 ```
 
-??? It just returns a list of 10 folds (splits) ??? Probably to use it later in a loop
+The code returns a list of 10 folds (splits) that we are going to use it later one by one in the cross-validation stage.
 
 ## `fit_resamples()`
 
@@ -331,7 +357,7 @@ collect_metrics(tree_fit)
 
 ```
 
-What does it mean???
+Based on the area under the ROC curve criterion, the logistic regression is a better choice on average (60.6% correct predictions), whereas decision tree model actually shows **worse** results than the naive model (54.7% vs 55.4%).
 
 ```{r}
 tree_preds <- tree_mod %>% 
@@ -354,7 +380,7 @@ tree_preds %>%
 
 ```
 
-Comment on ROC-curve
+Dependent only on ratings (IMDB and Metacritic), the model seems to perform better than the naive prediction, with ROC curve surpassing 45 degrees angle line for most of the times. However, we would need to look additionally at the area under the curve.
 
 # Build a better training set with `recipes`
 
@@ -452,7 +478,7 @@ What if there were no films with `rated` NC-17 in the training data?
 
 The model will have no coefficient, because the dummy variable for the NC-17 would not be created in the first place. Subsequently, if test data includes such observations, two things could happen:
 
--   The model breaks down as it does not know how to interpret new value of the variable (or it splits new variables in a list of dummys with 1 extra compared to the testing sample)
+-   The model breaks down as it does not know how to interpret new value of the variable (or it splits new variables in a list of dummies with 1 extra compared to the testing sample)
 
 -   The model just ignores the unknown value, applying 0 to all dummies and in fact using the implied coefficient for the base value (say, rating "G"). However, actual category ("NC-17") is different, which would distort prediction capabilities.
 
@@ -602,7 +628,7 @@ HEADS UP
 
 1.  How many models have you specified? **5**
 2.  What's the difference between a model specification and a workflow? **TBA**
-3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe? **Yes, because we want to test our hypothesis if the classification result depends on particular variables**
+3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe? No, because in the recipe we have chosen our variables (and manipulated data) beforehand.
 
 # Model Comparison
 
@@ -839,8 +865,8 @@ There is a lot of explanatory text, comments, etc. You do not need these, so del
 
 # Details
 
--   Who did you collaborate with: TYPE NAMES HERE
--   Approximately how much time did you spend on this problem set: ANSWER HERE
+-   Who did you collaborate with: None
+-   Approximately how much time did you spend on this problem set: 6 hours
 -   What, if anything, gave you the most trouble: ANSWER HERE
 
 **Please seek out help when you need it,** and remember the [15-minute rule](https://dsb2023.netlify.app/syllabus/#the-15-minute-rule){target="_blank"}. You know enough R (and have enough examples of code from class and your readings) to be able to do this. If you get stuck, ask for help from others, post a question on Slack-- and remember that I am here to help too!
