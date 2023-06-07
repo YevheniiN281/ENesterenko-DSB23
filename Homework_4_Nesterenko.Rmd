@@ -627,7 +627,7 @@ knn_wflow <-
 HEADS UP
 
 1.  How many models have you specified? **5**
-2.  What's the difference between a model specification and a workflow? **TBA**
+2.  What's the difference between a model specification and a workflow? To our understanding, model specification relates to the choice of model and setting relevant parameters, such as engine and mode (classification or regression). A workflow is a more detailed process of working with the data (including using the recipe to manipulate data, and applying the model of choice)
 3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe? No, because in the recipe we have chosen our variables (and manipulated data) beforehand.
 
 # Model Comparison
