@@ -683,6 +683,14 @@ log_pred %>%
 
 ```
 
+Logistic regression after cross-validation seems to have inferior results:
+
+-   Area under the ROC curve is just 47.3%, which is not only lower than in the naive model (55.4%), but even worse than just flipping a coin (50% chance).
+
+-   Sensitivity and specificity are below 50%, which indicates both large number of false positives and false negative alerts. The confusion matrix supports this conclusion, the number of false positives (328 is particularly troubling).
+
+-   Some ROC curves pass largely below the 50/50 line, these must be folds at which the model performs particularly poor. There is misalignment when some ROC-curves are higher than 50/50 line (good prediction quality) but some are lower (bad quality).
+
 **DECISION TREE**
 
 ```{r}
@@ -726,6 +734,15 @@ tree_pred %>%
   roc_curve(test, .pred_Pass) %>% 
   autoplot()
 ```
+
+Base decision tree model performs better and is more or less robust:
+
+-   Most ROC-curves pass below the 50/50 prediction line, but the graph seems to be inverted, so it is actually a good sign. In other way, if the model constantly predicts wrong, we could just take model results and do the opposite. \
+    Area under the ROC curve is 59.1%, which is better than naive model accuracy (55.4%).
+
+-   Sensitivity, which is a measure of true positive rate, is quite high - 63.7%, which makes model a good candidate for prediction.
+
+-   Specificity, which is a measure of true negative rate, is not that good - only 53%, which indicates potential overlook of movies that would actually fail the Bechdel test.
 
 **RANDOM FOREST**
 
@@ -771,6 +788,15 @@ rf_pred %>%
   autoplot()
 ```
 
+Random forest model, making use of various decision trees, turns out to show even better results and is quite robust:
+
+-   All ROC-curves for the most part pass below the 50/50 line. Again, with all curves alignment, it is actually a good sign.\
+    Area under the ROC curve is on average 65.9%, superior to all previous model (logistic regression, naive "Fail" prediction, and decision tree).
+
+-   Sensitivity is very high - 77.8%, which makes model a perfect candidate for prediction, better than in the decision tree model.
+
+-   However, specificity is below 50% (marginally worse than for the decision tree), which indicates potential overlook of movies that would actually fail the Bechdel test. A researcher needs to decide what is more important - predict pass or fail with more certainty).
+
 **GRADIENT BOOSTING**
 
 ```{r}
@@ -815,7 +841,19 @@ xgb_pred %>%
   autoplot()
 ```
 
-**??? KNN ???**
+Gradient boosting model also looks promising, showing a little more modest results on average but being the most robust:
+
+-   Average area under the ROC-curve is 64.4%, marginally below that of random forest model (65.9%).
+
+-   All ROC curves lie almost entirely below the 50/50 line (good if there is alignment). Moreover, ROC-curves for different folds are not too far away, which indicates a great robustness to potential changes in data.
+
+-   Sensitivity is quite high at 71.1%, making the model a good candidate for prediction. It is lower, however, that in random forest model.
+
+-   Sensitivity is not great (53.9%), but better than in random forest model.
+
+Overall, we would expect gradient boosting model to perform more robust and be useful in cases when we need a balanced approach in classifying positive and negative cases.
+
+**K-NEAREST NEIGHBORS**
 
 ```{r}
 knn_res <- knn_wflow %>% 
@@ -859,6 +897,26 @@ knn_pred %>%
   autoplot()
 ```
 
+K-nearest neighbors algorithm gives controversial results, with bad performance on average but the best in specificity:
+
+-   Average area under the ROC-curve is only 54.8%, marginally below naive "Fail prediction"
+
+-   ROC-curves are sometimes above, sometimes below 50/50 line - not a great robustness
+
+-   Sensitivity is unusually high - almost 90%, which makes pass predictions very reliable
+
+-   Specificity is unusually low - around 10%, which makes fail predictions very unreliable
+
+Overall, model seems to predict test failure almost all the time. When it does predict a pass, it is very reliable result (hence, high sensitivity), but in the general classification task (predict both pass and fail) the model is not so useful.
+
+**MODEL CHOICE**
+
+To summarize, we think that two models are useful for the classification purposes: **random forest and gradient boosting**. The choice would depend on researcher's goals:
+
+**Random forest** gives the best predictions on average and should be used when reliability of a pass prediction (true positive rate) is more important than reliability of a fail prediction (true negative rate).
+
+**Gradient boosting** is marginally worse on average, but is useful when a researcher wants to apply a more balanced approach between positive and negative predictions. It also seems to be more robust, which makes it safer to apply on unknown data.
+
 # Deliverables
 
 There is a lot of explanatory text, comments, etc. You do not need these, so delete them and produce a stand-alone document that you could share with someone. Knit the edited and completed R Markdown (Rmd) file as a Word or HTML document (use the "Knit" button at the top of the script editor window) and upload it to Canvas. You must be commiting and pushing your changes to your own Github repo as you go along.
@@ -866,7 +924,7 @@ There is a lot of explanatory text, comments, etc. You do not need these, so del
 # Details
 
 -   Who did you collaborate with: None
--   Approximately how much time did you spend on this problem set: 6 hours
+-   Approximately how much time did you spend on this problem set: 8 hours
 -   What, if anything, gave you the most trouble: ANSWER HERE
 
 **Please seek out help when you need it,** and remember the [15-minute rule](https://dsb2023.netlify.app/syllabus/#the-15-minute-rule){target="_blank"}. You know enough R (and have enough examples of code from class and your readings) to be able to do this. If you get stuck, ask for help from others, post a question on Slack-- and remember that I am here to help too!
